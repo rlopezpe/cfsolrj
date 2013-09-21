@@ -18,7 +18,7 @@
 	<target name="preDeploy" description="delete old source code">
 		<echo>Deleting old source code...</echo>
 		<delete includeemptydirs="true">
-			<fileset dir="${APP_ROOT}/src">
+			<fileset dir="${APP_ROOT}">
 				<include name="**/*"/>
 				<exclude name="**/CFIDE/**"/>
 				<exclude name="**/WEB-INF/**"/>
@@ -33,7 +33,7 @@
 	<target name="copySource" depends="preDeploy">
 		<echo>Copying ${ant.project.name} Application source files to ${APP_ROOT}</echo>   	
 		<copy todir="${APP_ROOT}" overwrite="true">
-			<fileset dir="${JENKINS_WORKSPACE}"/>		
+			<fileset dir="${JENKINS_WORKSPACE}\src"/>		
 		</copy>   	
 		<echo>copySource:completed</echo>
 	</target>
