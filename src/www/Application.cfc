@@ -188,7 +188,9 @@ component{
 		}
 		if(proceed){
 			applicationStop();
-			location(url=arguments.requestedPage & "?",addToken=false);
+			var flushParamIx = listContainsNoCase(cgi.query_string, "flush", "&");
+			local.queryString = (flushParamIx) ? listDeleteAt(cgi.query_string, local.flushParamIx, "&") : "";
+			location(url=arguments.requestedPage & "?" & local.queryString ,addToken=false);
 		}
 	}
 		private void function checkForProbes(){

@@ -8,10 +8,24 @@
 
 	switch(mvc.event){
 		case "index":
-			application.objIndexManager.index();
+			application.indexManager.index();
 				
 		break;
 		
+		case "simpleSample_index":
+			simpleIndex = new cc.rolando.solr.utils.SimpleIndex();
+
+			simpleIndex.index();
+		break;
+
+		case "simpleSample_search":
+			simpleIndex = new cc.rolando.solr.utils.SimpleIndex();
+
+			param name="url.q" default="test";
+			results = simpleIndex.search(criteria:url.q);
+			writeDump(results);
+			abort;
+		break;
 
 	}
 		//set default value for view

@@ -50,7 +50,6 @@ component {
 		setting requesttimeout="10000";
 
 		if(rs.recordCount){
-
 				// get the Solr service instance
 			var solr = getSolrServer();
 				//initialize the array to hold the Solr Documents
@@ -60,23 +59,31 @@ component {
 			for(var row in local.rs){
 					// initialize the holder of current document as temp var
 				var tmpDocument	=server.cfSolrJJavaLoader.create("org.apache.solr.common.SolrInputDocument");
-				var arrays={"actors"=[]};
+
 
 					//@javaMethod 
 				local.tmpDocument.addField("uid",javaCast("int",row.film_id));
 				local.tmpDocument.addField("key",javaCast("int",row.film_id));
 				local.tmpDocument.addField("summary",row.description);
 				local.tmpDocument.addField("title",row.title);
-				// local.tmpDocument.addField("sort_title",sort_title);
-				local.tmpDocument.addField("release_year", javaCast('int',row.release_year) );
+				local.tmpDocument.addField("release_year", javaCast('int',dateFormat(row.release_year,"yyyy")) );
 				local.tmpDocument.addField("rental_duration", javaCast('int',row.rental_duration) );
 				local.tmpDocument.addField("rental_rate", javaCast('float',row.rental_rate) );
 				local.tmpDocument.addField("replacement_cost", javaCast('float',row.replacement_cost) );
 				local.tmpDocument.addField("last_update", row.last_update );
 
-				local.tmpDocument.addField("contents",row.description);
-				local.tmpDocument.addField("contents",row.title);
-				local.tmpDocument.addField("contents",row.release_year);
+				// local.tmpDocument.addField("contents",row.description);
+				// local.tmpDocument.addField("contents",row.title);
+				// local.tmpDocument.addField("contents",row.release_year);
+
+				var qFilmActors = getIndexDao().getFilmActors(row.film_id);
+
+					// add actors
+				for( actor in qFilmActors){
+					local.tmpDocument.addField("actors",actor.full_name);
+					local.tmpDocument.addField("actors_id",javaCast("int",actor.actor_id));
+				}
+
 
 					// append the current document to the Array of Documents
 				arrayAppend(local.aDocuments, local.tmpDocument);
@@ -130,30 +137,35 @@ component {
 			break;
 			case 3:
 			default:
-				arguments.criteria = 'contents:"' & arguments.criteria & '" ' & 'title:"' & arguments.criteria & '"' ;
+				arguments.criteria = 'contents:"' & arguments.criteria & '" ' & 'title:"' & arguments.criteria & '"' & 'actors:"' & arguments.criteria & '"' ;
 		}       
 
 		local.startTime = getTickCount();
 		local.httpService = new http(url:variables.solrServiceUrl & "/select");
 		local.httpService.setMethod("post");
+
 		local.httpService.addParam(type:"formfield", name:"q", value:arguments.criteria);
 		local.httpService.addParam(type:"formfield", name:"wt", value:"#local.wt#");
 		local.httpService.addParam(type:"formfield", name:"hl", value:arguments.highlight);
-		local.httpService.addParam(type:"formfield", name:"hl.fl", value:"title,summary,contents");
+		local.httpService.addParam(type:"formfield", name:"hl.fl", value:"title,summary,actors");
 		/* local.httpService.addParam(type:"formfield", name:"fl", value:arguments.fields);
 		local.httpService.addParam(type:"formfield", name:"start", value:arguments.startrow);
 		local.httpService.addParam(type:"formfield", name:"rows", value:arguments.maxrows);
 		local.httpService.addParam(type:"formfield", name:"sort", value:arguments.sort);
  		*/
+
  		local.httpResponse = local.httpService.send().getPrefix();
  		local.endTime = getTickCount();
 
  		if(val(local.httpResponse.statusCode) == variables.httpStatus.SC_OK){
 			local.searchResults["struct"] = deserializeJSON(local.httpResponse.Filecontent);
+			writeDump(var:"Solr search in #local.endTime-local.startTime# ms or #(local.endTime-local.startTime)/1000# s and found #local.searchResults.struct.response.numfound# records", output:"console");
+			writeLog(text:"Solr search in #local.endTime-local.startTime# ms or #(local.endTime-local.startTime)/1000# s and found #local.searchResults.struct.response.numfound# records"
+					,type:"information",file:"cfSolrJ_Search");
 
 			if(arguments.highlight)
 				applyHighlights(local.searchResults.struct);
- 			
+
 			switch(arguments.returnFormat){
 				case 'json':
 				case 'xml':
@@ -167,9 +179,7 @@ component {
 					return local.searchResults.struct;
 					break;
 			}
-
-			writeLog(text:"Solr search in #local.endTime-local.startTime# ms or #(local.endTime-local.startTime)/1000# s and found #local.searchResults.struct.response.numfound# records"
-					,type:"information",file:"heroSearch");
+			
 		}else{
 			throw(message:"Error contacting Solr service via http. Response code #local.httpResponse.statusCode# ");
 		}
@@ -178,19 +188,28 @@ component {
 
 	}
 
-		private void function applyHighlights(required struct solrResults){
-			if(structKeyExists(arguments.solrResults,"highlighting")){
-				
-				for(ixDoc in arguments.solrResults.response.docs){
-					if( structKeyExists	(arguments.solrResults.highlighting, ixDoc.uid)
-						&& !structIsEmpty(arguments.solrResults.highlighting[ixDoc.uid])
-						){
-						ixDoc.summary = arguments.solrResults.highlighting[ixDoc.uid].summary[1];
-					}
+	private void function applyHighlights(required struct solrResults){
+		if(structKeyExists(arguments.solrResults,"highlighting")){
+			
+			for(ixDoc in arguments.solrResults.response.docs){
+				if( structKeyExists	(arguments.solrResults.highlighting, ixDoc.uid)
+					&& !structIsEmpty(arguments.solrResults.highlighting[ixDoc.uid])
+					){
+					try{
 
+					ixDoc.summary = (structKeyExists(arguments.solrResults.highlighting[ixDoc.uid],"summary")) ? arguments.solrResults.highlighting[ixDoc.uid].summary[1] : ixDoc.summary;
+					ixDoc.title = (structKeyExists(arguments.solrResults.highlighting[ixDoc.uid],"title")) ? arguments.solrResults.highlighting[ixDoc.uid].title[1] : ixDoc.title;
+					ixDoc.actors = (structKeyExists(arguments.solrResults.highlighting[ixDoc.uid],"actors")) ? arguments.solrResults.highlighting[ixDoc.uid].actors[1] : ixDoc.actors;
+					}catch(any e){
+						writeDump(ixDoc);
+						writeDump(arguments.solrResults.highlighting);
+						abort;
+					}
 				}
+
 			}
 		}
+	}
 
 		/**
 		 * Converts an array of structures to a CF Query Object.

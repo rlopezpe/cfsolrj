@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+	<project name="CFSolrJ" default="timestampDeployment" basedir="">
+
+	<property environment="env"/>
+	<property name="APP_FOLDER_NAME"      value="CFSolrJ"/>
+	<property name="APP_ROOT" value="${BASE_HOME}\${APP_FOLDER_NAME}" />
+	<property name="JENKINS_WORKSPACE" value="${env.JENKINS_HOME}\jobs\${env.JOB_NAME}\workspace\${ant.project.name}" />
+	<property name="BuildsPath" value="${env.JENKINS_HOME}\jobs\${env.JOB_NAME}\workspace\builds" />
+
+		<!-- Define build properties -->
+	<property name="build.name" value="${ant.project.name}_${env.BUILD_NUMBER}" />  
+	<tstamp>
+		<format property="build.date" pattern="yyyy/MM/dd HH:mm:s" />
+	</tstamp>
+
+	
+	<target name="preDeploy" description="delete old source code">
+		<echo>Deleting old source code...</echo>
+		<delete includeemptydirs="true">
+			<fileset dir="${APP_ROOT}">
+				<include name="**/*"/>
+				<exclude name="**/CFIDE/**"/>
+				<exclude name="**/WEB-INF/**"/>
+				<exclude name="**/META-INF/**"/>
+				<!--  <exclude name="lib/**"/> -->
+				<exclude name="crossdomain.xml**"/>
+				<exclude name="**/${APP_FOLDER_NAME}/**"/> <!-- Just in case to protect main app folder in case dir=${APP_ROOT} points to the wrong location -->
+			</fileset>
+		</delete>
+		<echo>preDeploy:completed</echo>
+	</target> 
+
+	<target name="copySource" depends="preDeploy">
+		<echo>Copying ${ant.project.name} Application source files to ${APP_ROOT}</echo>   	
+		<copy todir="${APP_ROOT}" overwrite="true">
+			<fileset dir="${JENKINS_WORKSPACE}"/>		
+		</copy>   	
+		<echo>copySource:completed</echo>
+	</target>
+
+	<target name="timestampDeployment" description="Applies a timestamp to the deployed build properties file" depends="copySource">
+		<echo>Generating property file</echo>
+		<propertyfile  file="${APP_ROOT}\.deployProperties" >
+			<entry  key="deployedOn" type="date" value="${build.date}"/>
+			<entry  key="build" type="int" value="${env.BUILD_NUMBER}"/>
+		</propertyfile>
+		<echo>timestampDeployment:completed</echo>
+	</target>
+	
+
+	<!-- ISOLATED Target to be executed only if build is successful -->
+	<target name="packageIt" description="Package the source code into a zip file" >
+		<echo>Generating packaged source code</echo>
+		<echo>*********************************************************************************************</echo>
+		<zip destfile="${BuildsPath}/${build.name}.zip"
+				basedir="${APP_ROOT}"
+				includes="**/*"
+				excludes="**/CFIDE/**, **/WEB-INF/**, **/META-INF/**"
+				/>
+		<echo>*********************************************************************************************</echo>
+		<echo>packageIt:completed</echo>
+	</target>
+
+</project>
+

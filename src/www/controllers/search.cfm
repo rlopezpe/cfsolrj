@@ -16,18 +16,15 @@
 					throw("Missing query parameter");
 
 				search = {};
-				search["returnFormat"] = (structKeyExists(url, "f") ? url.f : "json");
+				search["returnFormat"] = (structKeyExists(url, "f") ? url.f : "query");
 				search["highlight"]		= (structKeyExists(url, "highlight") ? url.highlight : false);
 				search["results"] = application.indexManager.search( criteria:url.q
 																	, searchType:3
 																	, returnFormat:search.returnFormat
 																	, highlight: search.highlight	
 																);
-
-				for(doc in search.results){
-					writeOutput(doc.summary & "<br />");	
-				}
-				writeDump(search.results);	
+				
+				// writeDump(search);	
 
 				
 
