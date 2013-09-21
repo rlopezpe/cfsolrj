@@ -37,7 +37,8 @@ component{
 	
 		//onRequestStart()
 	public function onRequestStart(String requestedPage) {
-			setting showdebugoutput=application.oConfig.getenableDebugOutput();
+			 setting showdebugoutput	 = structKeyExists(application,"oConfig") ? application.oConfig.getenableDebugOutput() : false;	
+			
 
 			//if session scope has been reset, recreate
 /* 			if(!structKeyExists(Session,"authorized")) {
@@ -71,7 +72,7 @@ component{
 
 			//load Object factory (this can be improved)
 			/*** NOTE: this should be loaded in Application.cfc, and the IF statement below would be unnecessary,
-			 but is required here while the objects loaded by the factory are dependent on the Request scope. ***/		
+			 but is required here while the objects loaded by the factory are dependent on the Request scope. ***/	
 	}
 
 	public void function onRequestEnd(){

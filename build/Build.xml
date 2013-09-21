@@ -44,6 +44,13 @@
 			<entry  key="deployedOn" type="date" value="${build.date}"/>
 			<entry  key="build" type="int" value="${env.BUILD_NUMBER}"/>
 		</propertyfile>
+		<replace file="${APP_ROOT}\www\config\environment.xml.cfm" >
+		  <replacefilter token="@buildNo@" value="${env.BUILD_NUMBER}"/>
+		  <replacefilter token="@modified@" value="${build.date}"/>
+		  <replacefilter token="@gitCommit@" value="${env.GIT_COMMIT}"/>
+		  <replacefilter token="@gitBranch@" value="${env.GIT_BRANCH}"/>
+		</replace>
+
 		<echo>timestampDeployment:completed</echo>
 	</target>
 	

@@ -17,9 +17,11 @@
 			</property>
 			
 				<!-- for ANT script -->
-			<property name="revision">@svnrevision@</property>
+			<property name="buildNo">@buildNo@</property>
 			<property name="lastmodified">@modified@</property>
 			<property name="versionNumber">@version@</property>
+			<property name="gitCommit">@gitCommit@</property>
+			<property name="gitBranch">@gitBranch@</property>
 			
 				<!-- Absolute Paths -->
 			<property name="cfLogPath">#server.coldfusion.rootdir#/logs</property>
@@ -89,6 +91,8 @@
         </patterns>
         <config>
         	<property name="isDev">false</property>
+        	<property name="dsn">ticketmob_admin</property>
+        	<property name="enableDebugOutput">true</property>
         </config>
 	</environment>
 </environments>		
