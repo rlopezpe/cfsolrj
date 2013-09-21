@@ -3,7 +3,7 @@
 	<project name="CFSolrJ" default="timestampDeployment" basedir="">
 
 	<property environment="env"/>
-	<property name="APP_FOLDER_NAME"      value="CFSolrJ"/>
+	<property name="APP_FOLDER_NAME"      value="cfsolrj"/>
 	<property name="APP_ROOT" value="${BASE_HOME}\${APP_FOLDER_NAME}" />
 	<property name="JENKINS_WORKSPACE" value="${env.JENKINS_HOME}\jobs\${env.JOB_NAME}\workspace\${ant.project.name}" />
 	<property name="BuildsPath" value="${env.JENKINS_HOME}\jobs\${env.JOB_NAME}\workspace\builds" />
@@ -18,12 +18,11 @@
 	<target name="preDeploy" description="delete old source code">
 		<echo>Deleting old source code...</echo>
 		<delete includeemptydirs="true">
-			<fileset dir="${APP_ROOT}">
+			<fileset dir="${APP_ROOT}/src">
 				<include name="**/*"/>
 				<exclude name="**/CFIDE/**"/>
 				<exclude name="**/WEB-INF/**"/>
 				<exclude name="**/META-INF/**"/>
-				<!--  <exclude name="lib/**"/> -->
 				<exclude name="crossdomain.xml**"/>
 				<exclude name="**/${APP_FOLDER_NAME}/**"/> <!-- Just in case to protect main app folder in case dir=${APP_ROOT} points to the wrong location -->
 			</fileset>
