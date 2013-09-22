@@ -32,7 +32,7 @@
 
 	<target name="copySource" depends="preDeploy">
 		<echo>Copying ${ant.project.name} Application source files to ${APP_ROOT}</echo>   	
-		<copy todir="${APP_ROOT}" overwrite="true">
+		<copy todir="${APP_ROOT}" overwrite="true" preservelastmodified="true">
 			<fileset dir="${JENKINS_WORKSPACE}\src"/>		
 		</copy>   	
 		<echo>copySource:completed</echo>
@@ -44,6 +44,7 @@
 			<entry  key="deployedOn" type="date" value="${build.date}"/>
 			<entry  key="build" type="int" value="${env.BUILD_NUMBER}"/>
 		</propertyfile>
+		<echo>Replacing tokens in environment.xml file</echo>
 		<replace file="${APP_ROOT}\www\config\environment.xml.cfm" >
 		  <replacefilter token="@buildNo@" value="${env.BUILD_NUMBER}"/>
 		  <replacefilter token="@modified@" value="${build.date}"/>
