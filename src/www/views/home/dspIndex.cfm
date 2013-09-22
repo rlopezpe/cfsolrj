@@ -11,9 +11,11 @@
 		</form>
 	</div>
 </div>
-
+<div style="font-size:19px;">
+	<cfoutput>#application.oConfig.getBuildNo()#</cfoutput>
+</div>
 <cfscript>
 	
-	writeDump(application);
+	writeDump(application.oConfig);
 </cfscript>
 

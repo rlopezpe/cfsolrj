@@ -92,7 +92,7 @@
         <config>
         	<property name="isDev">false</property>
         	<property name="dsn">ticketmob_admin</property>
-        	<property name="enableDebugOutput">true</property>
+        	<property name="enableDebugOutput">false</property>
         </config>
 	</environment>
 </environments>		
