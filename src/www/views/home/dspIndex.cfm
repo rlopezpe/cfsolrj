@@ -14,8 +14,8 @@
 <div style="font-size:19px;">
 	<cfoutput>#application.oConfig.getBuildNo()#</cfoutput>
 </div>
+	changed
 <cfscript>
-	changed.
 	writeDump(application.oConfig);
 </cfscript>
 
