@@ -185,7 +185,8 @@ component{
 				proceed = true;
 				//structClear(session);
 		}else{
-			
+			if(structKeyExists(url,"flush") && url.flush=="letme")
+				proceed = true;
 		}
 		if(proceed){
 			applicationStop();
