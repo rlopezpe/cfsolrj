@@ -15,7 +15,7 @@
 	<cfoutput>#application.oConfig.getBuildNo()#</cfoutput>
 </div>
 <cfscript>
-	
+	changed.
 	writeDump(application.oConfig);
 </cfscript>
 
