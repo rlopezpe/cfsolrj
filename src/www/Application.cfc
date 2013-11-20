@@ -7,7 +7,7 @@ component{
 	
 		//set EC mapping manually
 	this.mappings["/environmentConfig"] = expandPath("/devLib/environmentConfig");
-	this.mappings["/javaLoader"]	 	= expandPath("/devLib/javaloader_v1.1");
+	this.mappings["/javaLoader"]	 	= expandPath("/devLib/javaloader/javaloader");
 	this.mappings["/cc"]	 	= expandPath("../cc");
 
 	//******************************************** END of Implicit Constructor ********************************************
@@ -20,8 +20,8 @@ component{
 		initializeEnvironmentConfig();
 		
 		trace(text:"Replacing cfSolrJJavaLoader from Server scope...");
-		structDelete(Server, "cfSolrJJavaLoader");
-		loadJavaLoader();
+		// structDelete(Server, "cfSolrJJavaLoader");
+		loadJavaLoader(true);
 		/* writeDump(server);
 		writeDump(server.CFSOLRJJAVALOADER.GETCLASSLOADPATHS());
 		writeDump(application);
@@ -49,7 +49,6 @@ component{
 			//check if a restart/flush is requested
 			if (StructKeyExists(url, "flush")) {
 				trace(text:"Restarting the Application...");
-				writeLog(text:"Application restarted manually via flush",type:"information",file:"HERO");
 				restartApplication(arguments.requestedPage);
 			}
 		
@@ -91,9 +90,11 @@ component{
 	
 		/*@output true*/
 	public void function onError(any exception,String eventName){
-		if(structKeyExists(application,"objErrorHandler"))
+		if(structKeyExists(application,"objErrorHandler")){
 			application.objErrorHandler.registerError(argumentCollection:arguments);
-		else{
+			writeDump(local); 
+			abort;
+		}else{
 				//todo: write code to still attempt to send email if this code is ever executed.
 			throw(object:arguments.exception);		
 			abort;
@@ -109,12 +110,13 @@ component{
 			//for a list of static vars and the values see http://hc.apache.org/httpclient-3.x/apidocs/org/apache/commons/httpclient/HttpStatus.html. You can also cfdump the object
 		
 		application.httpStatus 				= SERVER.cfSolrJJavaLoader.create("org.apache.commons.httpclient.HttpStatus").init(); //loads Static class HttpStatus
+		application.searcher 				= SERVER.cfSolrJJavaLoader.create("cc.rolando.solr.Searcher").init(application.oConfig.getsolrServiceUrl()); //loads Static class HttpStatus
 		application.urlValidator 			= SERVER.cfSolrJJavaLoader.create("cc.rolando.validation.UrlValidatorHero").init();
 		application.javaTypeValidatorJAVA	= SERVER.cfSolrJJavaLoader.create("cc.rolando.validation.JavaObjectTypeValidator").init();
 		local.solrUtilities					= SERVER.cfSolrJJavaLoader.create("cc.rolando.utils.SolrUtils").init();
 		application.javaTypeValidator 		= new cc.rolando.validation.JavaTypeValidator(application.javaTypeValidatorJAVA);
 
-		local.salikaDao						= new cc.rolando.solr.utils.SalikaIndexDAO();
+		application.salikaDao						= new cc.rolando.solr.utils.SalikaIndexDAO();
 
 		application.indexManager			= new cc.rolando.solr.utils.indexManager(application.oConfig.getRecordsPerIndex()
 																				, "cfbookclub"
@@ -123,13 +125,12 @@ component{
 																				, application.javaTypeValidator 
 																				, application.oConfig
 																				, local.solrUtilities
-																				, local.salikaDao
+																				, application.salikaDao
 																				);
 	}
 
 	
 
-	
 	
 
 	private void function restartApplication(String requestedPage){
@@ -172,11 +173,11 @@ component{
 		return classPaths;
 	}
 	
-	private void function loadJavaLoader(){
+	private void function loadJavaLoader(boolean forceReload=false){
 			//load javaLoader
 			// writeDump(getJavaJarPaths());abort;
-		if(!structKeyExists(server,"cfSolrJJavaLoader"))	
-			server.cfSolrJJavaLoader = createObject("component", "javaloader.JavaLoader").init(getJavaJarPaths(),(val(left(server.coldfusion.productVersion,2)) > 8) ? true : false);
+		if(!structKeyExists(server,"cfSolrJJavaLoader") || arguments.forceReload)	
+			server.cfSolrJJavaLoader = createObject("component", "javaloader.JavaLoader").init(getJavaJarPaths(), true);
 	}
 
 	

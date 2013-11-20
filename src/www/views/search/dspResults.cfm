@@ -22,8 +22,13 @@
 				<div class="rReleaseYear">
 					#release_year#&nbsp;
 				</div>
+					
 				<div class="rActors">
+				<cfif structKeyExists(search.results, "actors") >
 					#actors#
+				<cfelse>
+				&nbsp;
+				</cfif>
 				</div>
 			</div>
 		</cfoutput>

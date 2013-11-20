@@ -10,67 +10,59 @@ component {
 
 	property name="solrServer" type="any" hint="javaType:org.apache.solr.client.solrj.impl.CommonsHttpSolrServer" getter="true" setter="false";
 
-
 		// constructor
 	public cc.rolando.solr.utils.SimpleIndex function init(){
 
-		variables.collectionUrl = "http://localhost:8985/solr/salika_simple";
+		variables.collectionUrl = "http://localhost:8985/solr/sakila_simple";
 			// create an instance of SolrServer by passing URL of collection
 		variables.solrServer = createObject("java", "org.apache.solr.client.solrj.impl.CommonsHttpSolrServer").init( variables.collectionUrl );
 			// writeDump(getSolrServer());
-			 // abort; 
+			// abort; 
 
 		return this;
 	}
 
 		/* @hint "indexes data from the query in a collection" */
 	public void function index(){
+				//extend request timeout
+		setting requesttimeout="10000";
+		var salikaDAO 	= new cc.rolando.solr.utils.SalikaIndexDAO(); /* instantiate DAO */
+			// get data
+		var qFilms		= local.salikaDAO.getData(); /* get query of films data */
+	
+		 // writeDump(var:local.qFilms, top:5);
+		  // abort;
+	if( qFilms.recordCount ){
 
-					//extend request timeout
-			setting requesttimeout="10000";
+		var aDocuments 	= []; /* Array to place solr documents */
+		var solr 		= variables.solrServer; // make a pointer to the variables.solrServer
+			// create instance of SolarInputDocument where data from a query row will be placed in
+		var startTime = getTickCount();
+		
+		for( ixFilm in qFilms ){
+			local.tmpDocument = createObject("java", "org.apache.solr.common.SolrInputDocument").init();
 
+				//@javaMethod 
+			local.tmpDocument.addField("uid",javaCast("int",ixFilm.film_id));
+			local.tmpDocument.addField("key",javaCast("int",ixFilm.film_id));
+			local.tmpDocument.addField("summary",ixFilm.description);
+			local.tmpDocument.addField("title",ixFilm.title);
+			local.tmpDocument.addField("release_year", javaCast('int',dateFormat(ixFilm.release_year,"yyyy")) );
 
-			var salikaDAO 	= new cc.rolando.solr.utils.SalikaIndexDAO(); /* instantiate DAO */
-				// get data
-			var qFilms		= local.salikaDAO.getData(); /* get query of films data */
-			
-				 // writeDump(var:local.qFilms, top:5);
-				  // abort;
-			if( qFilms.recordCount ){
+				// add current document to the array of docs
+			arrayAppend(local.aDocuments, local.tmpDocument);
 
-				var aDocuments 	= []; /* Array to place solr documents */
-				var solr 		= variables.solrServer; // make a pointer to the variables.solrServer
+			// writeDump(local.aDocuments);
 
-					// create instance of SolarInputDocument where data from a query row will be placed in
-					var startTime = getTickCount();
-				for( ixFilm in qFilms ){
-					
-					local.tmpDocument = createObject("java", "org.apache.solr.common.SolrInputDocument").init();
-					 // writeDump(local.tmpDocument);
-// abort;
-						//@javaMethod 
-					local.tmpDocument.addField("uid",javaCast("int",ixFilm.film_id));
-					local.tmpDocument.addField("key",javaCast("int",ixFilm.film_id));
-					local.tmpDocument.addField("summary",ixFilm.description);
-					local.tmpDocument.addField("title",ixFilm.title);
-					local.tmpDocument.addField("release_year", javaCast('int',dateFormat(ixFilm.release_year,"yyyy")) );
-						// writeDump(local.tmpDocument);
-// abort;
-						// add current document to the array of docs
-					arrayAppend(local.aDocuments, local.tmpDocument);
-
-					// writeDump(local.aDocuments);
-
-				}
-					// add array of solr documents to the solr collection
-				local.solr.add(local.aDocuments);
-				local.solr.commit(); /* commit the changes */
+		}
+			// add array of solr documents to the solr collection
+		local.solr.add(local.aDocuments);
+		local.solr.commit(); /* commit the changes */
 
 
-					var endTime = getTickCount();
-					writeDump("<br /> Films indexed in " & (local.endTime - local.startTime) & " ms ");
-					abort;
-				}
+		var endTime = getTickCount();
+		writeDump(var:"<br /> Films indexed in " & (local.endTime - local.startTime) & " ms ", output:"console");
+		}
 	}
 
 	public query function search(required String criteria, numeric startRow=0, numeric maxRows=20, string sort="score desc"){
@@ -88,32 +80,28 @@ component {
  		*/
  			local.startTime = getTickCount();
  		local.httpResponse = local.httpService.send().getPrefix();
- 			writeDump(var:"Search performed in: " & (getTickCount() - local.startTime) & " ms", output:"console"); // output to console
+ 		local.totalNetworkTime = (getTickCount() - local.startTime);
+ 			writeDump(var:"Search performed in: " & local.totalNetworkTime & " ms", output:"console"); // output to console
  			/* writeDump(local.httpResponse);
  			abort; */
  		if(left(local.httpResponse.statusCode,3) == 200){
- 				local.startTime = getTickCount();
-
 			local.searchResults.struct = deserializeJSON(local.httpResponse.Filecontent);
  			local.endRow	= arguments.startrow+arguments.maxrows-1;
 			if(local.endRow > local.searchResults.struct.response.numfound){
 				local.endRow = local.searchResults.struct.response.numfound;
 			} 
- 			local.extraColumns = {"total"=local.searchResults.struct.response.numfound,"startrow"=arguments.startrow+1,"endrow"=local.endRow+1};
- 			/* writeDump(var:local.searchResults.struct.response.docs);
+ 			local.extraColumns = {"total"=local.searchResults.struct.response.numfound,"startrow"=arguments.startrow+1,"endrow"=local.endRow+1, "networkTime"= local.totalNetworkTime,"queryTime"=local.searchResults.struct.responseHeader.qTime};
+ 			/* writeDump(var:local.searchResults);
  			abort; */
+			local.startTime = getTickCount();
  			var qReturn = arrayOfStructuresToQuery( local.searchResults.struct.response.docs, [], local.extraColumns );
+ 			var endTime = getTickCount();
+ 			writeDump(var:"Data transformed to query in: " & (local.endTime - local.startTime) & " ms", output:"console");
  		}else{
  			throw("Error performing solr search. Status code " & local.httpResponse.statusCode);
  		}
- 			var endTime = getTickCount();
- 			writeDump(var:"Data transformed to query in: " & (local.endTime - local.startTime) & " ms", output:"console");
  		return local.qReturn;
 	}
-
-
-
-
 
 
 		/**

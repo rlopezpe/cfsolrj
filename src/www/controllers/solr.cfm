@@ -21,10 +21,21 @@
 		case "simpleSample_search":
 			simpleIndex = new cc.rolando.solr.utils.SimpleIndex();
 
-			param name="url.q" default="test";
-			results = simpleIndex.search(criteria:url.q);
-			writeDump(results);
-			abort;
+			param name="url.q" default="monkey";
+
+
+			search = {};
+			search["returnFormat"] = (structKeyExists(url, "f") ? url.f : "query");
+			search["highlight"]		= (structKeyExists(url, "highlight") ? url.highlight : false);
+			/* search["results"] = application.indexManager.search( criteria:url.q
+																, searchType:0
+																, returnFormat:search.returnFormat
+																, highlight: search.highlight	
+															); */
+			search["results"] = simpleIndex.search(criteria:url.q);
+			// writeDump(results);
+			mvc.includePath = "search";
+			mvc.viewName = "results";
 		break;
 
 	}

@@ -38,7 +38,7 @@ component {
 		variables.httpStatus 	= arguments.httpStatus;
 		variables.config 		= arguments.config;
 		variables.solrUtils 	= arguments.solrUtils;
-		variables.solrServer 	= server.cfSolrJJavaLoader.create("org.apache.solr.client.solrj.impl.CommonsHttpSolrServer").init(solrServiceUrl);
+		variables.solrServer 	= createObject("java","org.apache.solr.client.solrj.impl.CommonsHttpSolrServer").init(solrServiceUrl);
 		variables.indexDao 		= arguments.indexDao;
 		return this;
 	}
@@ -58,7 +58,7 @@ component {
 
 			for(var row in local.rs){
 					// initialize the holder of current document as temp var
-				var tmpDocument	=server.cfSolrJJavaLoader.create("org.apache.solr.common.SolrInputDocument");
+				var tmpDocument	=createObject("java","org.apache.solr.common.SolrInputDocument");
 
 
 					//@javaMethod 
@@ -125,6 +125,9 @@ component {
 			case 'javabin':
 				local.wt="javabin";
 				break;
+			case 'cfml':
+				local.wt="cfml";
+				break;
 			default:
 				local.wt="json";
 		}
@@ -137,17 +140,17 @@ component {
 			break;
 			case 3:
 			default:
-				arguments.criteria = 'contents:"' & arguments.criteria & '" ' & 'title:"' & arguments.criteria & '"' & 'actors:"' & arguments.criteria & '"' ;
+				arguments.criteria = 'summary:"' & arguments.criteria & '" ' & 'title:"' & arguments.criteria & '"'  ; // & 'actors:"' & arguments.criteria & '"'
 		}       
 
 		local.startTime = getTickCount();
 		local.httpService = new http(url:variables.solrServiceUrl & "/select");
-		local.httpService.setMethod("post");
+		local.httpService.setMethod("get");
 
-		local.httpService.addParam(type:"formfield", name:"q", value:arguments.criteria);
-		local.httpService.addParam(type:"formfield", name:"wt", value:"#local.wt#");
-		local.httpService.addParam(type:"formfield", name:"hl", value:arguments.highlight);
-		local.httpService.addParam(type:"formfield", name:"hl.fl", value:"title,summary,actors");
+		local.httpService.addParam(type:"url", name:"q", value:arguments.criteria);
+		local.httpService.addParam(type:"url", name:"wt", value:"#local.wt#");
+		local.httpService.addParam(type:"url", name:"hl", value:arguments.highlight);
+		local.httpService.addParam(type:"url", name:"hl.fl", value:"title,summary"); //,actors
 		/* local.httpService.addParam(type:"formfield", name:"fl", value:arguments.fields);
 		local.httpService.addParam(type:"formfield", name:"start", value:arguments.startrow);
 		local.httpService.addParam(type:"formfield", name:"rows", value:arguments.maxrows);
@@ -156,7 +159,9 @@ component {
 
  		local.httpResponse = local.httpService.send().getPrefix();
  		local.endTime = getTickCount();
-
+ 		/* writeDump(local.httpResponse);
+ 		writeDump(deserializeJSON(local.httpResponse.fileContent));
+ 		abort; */
  		if(val(local.httpResponse.statusCode) == variables.httpStatus.SC_OK){
 			local.searchResults["struct"] = deserializeJSON(local.httpResponse.Filecontent);
 			writeDump(var:"Solr search in #local.endTime-local.startTime# ms or #(local.endTime-local.startTime)/1000# s and found #local.searchResults.struct.response.numfound# records", output:"console");
