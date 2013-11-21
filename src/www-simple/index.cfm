@@ -22,7 +22,9 @@
 
 		case "index":
 			simpleIndex.index();
-			include "#viewsPath#dspIndexResults.cfm";
+			search = {};
+			search["results"] = simpleIndex.search(criteria:"*:*");
+			include "#viewsPath#dspSearchResults.cfm";
 		break;
 		
 		case "search":
